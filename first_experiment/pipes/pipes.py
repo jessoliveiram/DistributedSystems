@@ -31,19 +31,26 @@ def write_numbers(write_fd, quantity):
             print("Sent random number")
             time.sleep(1)
         f.write(str(0) + "\n")
-        print("End")
+        print("Sent 0")
 
 
 def read_numbers(read_fd):
     with open(read_fd, "r") as f:
+        s = ""
         while True:
             n = f.read(1)
-            print("Number: " + n)
-            # if n == 0:
-            #     break
-            # if is_prime(int(n)):
-            #     return "Prime number"
-            # return "Not prime"
+            if n != "\n":
+                s += n
+            else:
+                if s == "0":
+                    print("End")
+                    return
+                if is_prime(int(s)):
+                    print("Prime number")
+                    s = ""
+                else:
+                    print("Not prime")
+                    s = ""
 
 
 def parent_child(quantity):
