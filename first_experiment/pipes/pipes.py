@@ -9,49 +9,56 @@ def random():
     return 1 + randrange(100)
 
 
-def number_generator(n):
+def generate_number(n):
     sum_n = n + random()
     print("Random number: " + str(sum_n))
     return sum_n
 
 
-def is_prime(n):
-    sqrt_n = n**(1/2)
-    for i in range(2, ceil(sqrt_n)):
-        if n % i == 0:
+def write_numbers(write_fd, quantity):
+    num = 1
+    with open(write_fd, "w", 1) as f:
+        for i in range(quantity):
+            num = generate_number(num)
+            f.write(str(num) + "\n")
+            print("Sending random number")
+            time.sleep(1)
+        f.write(str(0) + "\n")
+        print("Sending zero")
+
+
+def increment_value(s, num):
+    s += num
+    return s
+
+
+def prime(num):
+    sqrt_num = num ** (1 / 2)
+    for i in range(2, ceil(sqrt_num)):
+        if num % i == 0:
             return False
     return True
 
 
-def write_numbers(write_fd, quantity):
-    n = 1
-    with open(write_fd, "w", 1) as f:
-        for i in range(quantity):
-            n = number_generator(n)
-            f.write(str(n)+"\n")
-            print("Sent random number")
-            time.sleep(1)
-        f.write(str(0) + "\n")
-        print("Sent 0")
+def evaluate_number(num):
+    if num == 0:
+        print("End")
+    elif prime(num):
+        print("Prime number")
+    else:
+        print("Not prime")
 
 
 def read_numbers(read_fd):
     with open(read_fd, "r") as f:
         s = ""
         while True:
-            n = f.read(1)
-            if n != "\n":
-                s += n
+            num = f.read(1)
+            if num != "\n":
+                s = increment_value(s, num)
             else:
-                if s == "0":
-                    print("End")
-                    return
-                if is_prime(int(s)):
-                    print("Prime number")
-                    s = ""
-                else:
-                    print("Not prime")
-                    s = ""
+                evaluate_number(int(s))
+                s = ""
 
 
 def parent_child(quantity):
