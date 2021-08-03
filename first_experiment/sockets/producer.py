@@ -1,4 +1,6 @@
-import random, socket, sys
+import random
+import socket
+import sys
 
 
 def generate_number():
@@ -29,5 +31,5 @@ def send_number(n):
 if __name__ == '__main__':
     args = sys.argv
     if len(args) == 1:
-        print('The second arg must be the quantity of numbers')
+        print('Inform the quantity of numbers')
     send_numbers(int(args[1]))

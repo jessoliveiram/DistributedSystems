@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 from math import ceil
 from random import randrange
@@ -8,7 +9,7 @@ def random():
     return 1 + randrange(100)
 
 
-def number_genarator(n):
+def number_generator(n):
     sum_n = n + random()
     print("Random number: " + str(sum_n))
     return sum_n
@@ -26,7 +27,7 @@ def write_numbers(write_fd, quantity):
     n = 1
     with open(write_fd, "w", 1) as f:
         for i in range(quantity):
-            n = number_genarator(n)
+            n = number_generator(n)
             f.write(str(n)+"\n")
             print("Sent random number")
             time.sleep(1)
@@ -64,10 +65,12 @@ def parent_child(quantity):
         read_numbers(read_fd)
         
 
-def main():
-    quantity = 10
-    parent_child(quantity)
+def main(n):
+    parent_child(n)
 
 
 if __name__ == "__main__":
-    main()
+    args = sys.argv
+    if len(args) == 1:
+        print('Inform the quantity of numbers')
+    main(int(args[1]))
