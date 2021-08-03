@@ -11,7 +11,12 @@ def send_signal(pid, signal_num):
     print(pid, received_signal)
 
 
-def verify_process(process_id):
+def verify_process(pid):
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        print('Invalid PID: ', pid)
+        return False
     return True
 
 
