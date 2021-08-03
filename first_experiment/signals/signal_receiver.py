@@ -1,27 +1,35 @@
-import sys, os, signal, time
+import os
+import signal
+import sys
+import time
 
-def busy_wating():
-    
-    while(True):
+
+def busy_waiting():
+    while True:
         print("Waiting")
         time.sleep(3)
 
-def block_wating():
-    while(True):
+
+def block_waiting():
+    while True:
         print("Waiting")
         signal.pause()
 
-def receive_hup(signalNumber, frame):
-    print ('sighup..hup..up..p')
+
+def receive_hup(signal_number, frame):
+    print('sighup..hup..up..p')
     return
 
-def terminate_process(signalNumber, frame):
-    print ('Terminating the process')
+
+def terminate_process(signal_number, frame):
+    print('Terminating the process')
     sys.exit()
 
-def receive_signal(signalNumber, frame):
-    print('Received:', signalNumber)
+
+def receive_signal(signal_number, frame):
+    print('Received:', signal_number)
     return
+
 
 def register_signals():
     signal.signal(signal.SIGHUP, receive_hup)
@@ -39,14 +47,15 @@ def register_signals():
     signal.signal(signal.SIGFPE, receive_signal)
     signal.signal(signal.SIGTERM, terminate_process)
 
+
 if __name__ == '__main__':
     print(os.getpid())
     register_signals()   
     args = sys.argv
 
     if args[1] == "busy":
-        busy_wating()
+        busy_waiting()
     elif args[1] == "block":
-        block_wating()
+        block_waiting()
     else:
-        print('"block" for block wating or "busy" for busy waiting')
+        print('"block" for block waiting or "busy" for busy waiting')
