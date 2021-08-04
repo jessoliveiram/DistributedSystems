@@ -3,6 +3,8 @@ import signal
 import sys
 import time
 
+valid_signals = list(signal.valid_signals())
+
 
 def busy_waiting():
     while True:
@@ -27,7 +29,7 @@ def terminate_process(signal_number, frame):
 
 
 def receive_signal(signal_number, frame):
-    print('Received:', signal_number)
+    print('Received:', valid_signals[signal_number])
     return
 
 
