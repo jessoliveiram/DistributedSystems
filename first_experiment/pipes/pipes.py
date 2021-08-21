@@ -1,12 +1,8 @@
 import os
 import sys
 import time
-from random import randrange
 from utils.prime import is_prime
-
-
-def random():
-    return 1 + randrange(100)
+from utils.random_number import random
 
 
 def generate_number(n):
