@@ -1,11 +1,5 @@
 import socket
-
-
-def is_prime_number(n):
-    for i in range(2, n):
-        if n % i == 0:
-            return str(n) + ' is not prime.'
-    return str(n) + ' is prime.'
+from utils.prime import is_prime
 
 
 def listen_tcp():
@@ -34,7 +28,10 @@ def receive_connection(tcp_socket):
 def process_message(number):
     print('Receive:', number)
     if number != 0:
-        return is_prime_number(number)
+        if is_prime(number):
+            return str(number) + ' is prime.'
+        else: 
+            return str(number) + ' is not prime.'
     return 'Job is done! Exiting...'
 
 

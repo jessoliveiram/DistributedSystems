@@ -1,8 +1,8 @@
 import os
 import sys
 import time
-from math import ceil
 from random import randrange
+from utils.prime import is_prime
 
 
 def random():
@@ -32,18 +32,10 @@ def increment_value(s, num):
     return s
 
 
-def prime(num):
-    sqrt_num = num ** (1 / 2)
-    for i in range(2, ceil(sqrt_num)):
-        if num % i == 0:
-            return False
-    return True
-
-
 def evaluate_number(num):
     if num == 0:
         print("End")
-    elif prime(num):
+    elif is_prime(num):
         print("Prime number")
     else:
         print("Not prime")
