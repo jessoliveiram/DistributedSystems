@@ -1,5 +1,5 @@
 from random import randrange
 
 
-def random():
-    return 1 + randrange(100)
+def random(num):
+    return 1 + randrange(num)

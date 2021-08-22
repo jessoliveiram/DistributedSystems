@@ -6,7 +6,7 @@ from utils.random_number import random
 
 
 def generate_number(n):
-    sum_n = n + random()
+    sum_n = n + random(100)
     print("Random number: " + str(sum_n))
     return sum_n
 
