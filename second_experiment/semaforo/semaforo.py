@@ -1,4 +1,6 @@
 import _thread
+import argparse
+import sys
 import time
 import threading
 from utils.random_number import random
@@ -49,8 +51,18 @@ def consumidor():
         print("Consumidor consumiu:", item, b.livre, b.cheio)
 
 
-_thread.start_new_thread(produtor, ())
-_thread.start_new_thread(consumidor, ())
+def main(np, nc):
+    for i in range(np):
+        _thread.start_new_thread(produtor, ())
+    for i in range(nc):
+        _thread.start_new_thread(consumidor, ())
+    while 1:
+        pass
 
-while 1:
-    pass
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-np", "--nprodutor", required=True, nargs=1)
+    ap.add_argument("-nc", "--nconsumidor", required=True, nargs=1)
+    args = vars(ap.parse_args())
+    main(int(args['nprodutor'][0]), int(args['nconsumidor'][0]))
