@@ -3,6 +3,7 @@ import time
 import argparse
 import threading
 from utils.random_number import random
+from utils.prime import is_prime
 
 
 class SemaphoreBuffer:
@@ -22,7 +23,12 @@ class SemaphoreBuffer:
         self.mutex.acquire()
         if self.buffer[0] is not None:
             item = self.buffer.pop(0)
-            print("Consumidor consumiu:", item)
+            prime = is_prime(item)
+            if prime:
+                prime = "É primo"
+            else:
+                prime = "Não é primo"
+            print("Consumidor consumiu:", item, prime)
         self.mutex.release()
         time.sleep(1)
 
