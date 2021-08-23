@@ -21,7 +21,7 @@ class SemaphoreBuffer:
 
     def remove(self):
         self.mutex.acquire()
-        if self.buffer[0] is not None:
+        if len(self.buffer) > 0:
             item = self.buffer.pop(0)
             prime = is_prime(item)
             if prime:
