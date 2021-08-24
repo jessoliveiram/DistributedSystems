@@ -7,9 +7,10 @@ from utils.prime import is_prime
 
 
 class SemaphoreBuffer:
-    TAM_BUFFER = 1000
+    TAM_BUFFER = 10
     mutex = threading.Semaphore(1)
     buffer = []
+    count = 0
 
     def insert(self, item):
         self.mutex.acquire()
@@ -18,17 +19,23 @@ class SemaphoreBuffer:
             print("Produtor produziu:", item)
         self.mutex.release()
 
+    @property
     def remove(self):
         self.mutex.acquire()
         if len(self.buffer) > 0:
-            item = self.buffer.pop(0)
-            prime = is_prime(item)
-            if prime:
-                prime = "É primo"
+            if self.count < 100:
+                item = self.buffer.pop(0)
+                prime = is_prime(item)
+                self.count += 1
+                if prime:
+                    prime = "É primo"
+                else:
+                    prime = "Não é primo"
+                print("Consumidor consumiu:", item, prime)
             else:
-                prime = "Não é primo"
-            print("Consumidor consumiu:", item, prime)
+                exit()
         self.mutex.release()
+        return self.count
 
 
 b = SemaphoreBuffer()
@@ -42,7 +49,7 @@ def produtor():
 
 def consumidor():
     while True:
-        b.remove()
+        b.remove
 
 
 def main(np, nc):
