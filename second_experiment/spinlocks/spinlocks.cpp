@@ -3,6 +3,7 @@
 #include <iostream>
 #include <thread>
 #include <numeric>
+#include <chrono>
 
 using namespace std;
 atomic_flag lock_sum = ATOMIC_FLAG_INIT;
@@ -51,10 +52,36 @@ void parallel_sum(vector<signed char> numbers, int n_threads)
 
 }
 
+void generate_case_study(int N, int K)
+{
+    vector<signed char> numbers = generate_numbers_vector(N);
+    double total_duration = 0;
+    for (int i = 0; i < 10; i++)
+    {
+        total = 0;
+        auto start = chrono::system_clock::now();
+        parallel_sum(numbers, K);
+        auto end = chrono::system_clock::now();
+        chrono::duration<double> duration = end - start;
+        total_duration += duration.count();
+    }
+    cout << "N = " << N << endl;
+    cout << "K = " << K << endl;
+    cout << total_duration/10 << endl;
+}
+
 int main()
 {
-    vector<signed char> numbers = generate_numbers_vector(10);
-    parallel_sum(numbers, 5);
-    cout << total << endl;
+
+    int n_threads = 1;
+    while (n_threads <= 256)
+    {
+        generate_case_study(10000000, n_threads);
+        generate_case_study(100000000, n_threads);
+        generate_case_study(1000000000, n_threads);
+        n_threads = n_threads * 2;
+    }
+    
+    
 }
 
