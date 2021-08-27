@@ -7,22 +7,32 @@
 
 
 using namespace std;
-
+//Class to representing a counter semaphore
 class Semaphore {
 public:
     Semaphore(int count_ = 0)  : count(count_) {}
 
-    inline void acquire() {
+    inline void wait() {
         unique_lock<mutex> lock(mtx);
         while (count == 0)
             cv.wait(lock);
         count--;
     }
 
-    inline void release() {
+    inline void signal() {
         unique_lock<mutex> lock(mtx);
         count++;
         cv.notify_one();
+    }
+
+    void set_count(int new_count)
+    {
+      count = new_count;
+    }
+
+    int get_count()
+    {
+      return count;
     }
 
 private:
@@ -31,7 +41,7 @@ private:
     int count;
 };
 
-
+//Class to representing a counter with a mutex on all operates 
 class MutexCounter
 {
 public:
@@ -50,8 +60,9 @@ public:
 
   void increment_count()
   {
+    mutex_counter.lock();
     this->counter++;
-
+    mutex_counter.unlock();
   }
 
   void clear_count()
@@ -64,21 +75,23 @@ private:
   int counter;
 };
 
-
+//Initializing the global vars
 vector<int> data;
-int buffer = 100;
 int n = 10e5;
 Semaphore mutex_data(1);
-Semaphore empty(buffer);
+Semaphore empty(1);
 Semaphore full(0);
 
 MutexCounter consumer_counter;
+MutexCounter producer_counter;
 
+// function to generate a random number between 1 and 10^7
 int generate_number() {
   srand(time(NULL));
   return 1 + (rand() % (int)10e7);
 }
 
+// function to check if a number is prime
 bool is_prime(int n) {
   for (int i = 2; i < sqrt(n); i++)
     if ((n % i) == 0)
@@ -86,35 +99,40 @@ bool is_prime(int n) {
   return true;
 }
 
+//function to consume a number of the shared vector and check if it is prime
 void consume()
 {
   while(consumer_counter.get_count() < n) {
         consumer_counter.increment_count();
-        full.acquire();
-        mutex_data.acquire();
+        full.wait();
+        mutex_data.wait();
         int num = data.back();
         data.pop_back();
         //cout << "Número recebido:" << num << " - " << is_prime(num) << endl;
-        mutex_data.release();
-        empty.release();
+        mutex_data.signal();
+        empty.signal();
       }
 }
 
+//function to insert a random number in the shared vector
 void produce()
 {
-  while(consumer_counter.get_count() < n) {
-        empty.acquire();
-        mutex_data.acquire();
+  while(producer_counter.get_count() < n) {
+        producer_counter.increment_count();
+        empty.wait();
+        mutex_data.wait();
         data.push_back(generate_number());
-        mutex_data.release();
-        full.release();
+        mutex_data.signal();
+        full.signal();
       }
 }
 
-void generate_case_study(int NP, int NC)
+//function to execute threads by define in case study 
+void generate_case_study(int NP, int NC, int N)
 {
   double total_duration = 0;
-  for(int i = 0; i < 10; i++)
+  empty.set_count(N);
+  for(int j = 0; j < 10; j++)
   {
    
     vector<thread> producers;
@@ -127,30 +145,40 @@ void generate_case_study(int NP, int NC)
     for (unsigned int i = 0; i < NC; i++)
       consumers.emplace_back(consume);
 
-    for (auto& consumer : consumers)
-      consumer.join();
-
     for (auto& producer : producers)
       producer.join();
+
+    for (auto& consumer : consumers)
+      consumer.join();
 
     auto end = chrono::system_clock::now();
     chrono::duration<double> duration = end - start;
     total_duration += duration.count();
-    consumer_counter.clear_count();   
+    consumer_counter.clear_count();
+    producer_counter.clear_count();   
   }
+  cout << "N = " << empty.get_count() << endl;
   cout << "Np = " << NP << endl;
   cout << "Nc = " << NC << endl;
   cout << total_duration/10 << endl;
 }
 
+//In the main function runs the case study with different params
 int main()
 {
   int i = 1;
-  while(i <= 16)
+  int n = 32;
+  while(n<=32)
   {
-    generate_case_study(i,1);
-    generate_case_study(1,i);
-    i = i * 2;
+    
+    while(i <= 16)
+    {
+      generate_case_study(i,1,n);
+      generate_case_study(1,i,n);
+      i = i * 2;
+    }
+    i = 0;
+    n = n*2;
   }
-  
+
 }

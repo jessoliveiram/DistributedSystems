@@ -6,9 +6,12 @@
 #include <chrono>
 
 using namespace std;
+//global vars
 atomic_flag lock_sum = ATOMIC_FLAG_INIT;
 int total = 0;
 
+//function to generate a vector with n random numbers between -100 and 100
+//the numbers are representing with 1 byte char
 vector<signed char> generate_numbers_vector(int n)
 {
     vector<signed char> numbers_vector;
@@ -22,6 +25,8 @@ vector<signed char> generate_numbers_vector(int n)
     return numbers_vector;
 }
 
+
+//function to sum all elements of a vector and write the result in a global var
 void thread_safe_sum_vector_elements(vector<signed char>::const_iterator begin, vector<signed char>::const_iterator end)
 {
     int sub_total = accumulate(begin, end, 0);
@@ -30,6 +35,7 @@ void thread_safe_sum_vector_elements(vector<signed char>::const_iterator begin, 
     lock_sum.clear();
 }
 
+//Divide a vector of numbers in n threads to realize the sum of elements
 void parallel_sum(vector<signed char> numbers, int n_threads)
 {
     int thread_piece = (int) numbers.size()/n_threads;
@@ -52,6 +58,7 @@ void parallel_sum(vector<signed char> numbers, int n_threads)
 
 }
 
+//runs the sum of N numbers with K threads
 void generate_case_study(int N, int K)
 {
     vector<signed char> numbers = generate_numbers_vector(N);
@@ -70,6 +77,7 @@ void generate_case_study(int N, int K)
     cout << total_duration/10 << endl;
 }
 
+//The main function executes the case study with different values
 int main()
 {
 
