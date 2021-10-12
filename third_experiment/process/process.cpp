@@ -4,9 +4,11 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <string>
+using namespace std;
 
 #define PORT 8080
-#define LEN 4096
+#define LEN 10
 #define SERVER_ADDR "127.0.0.1"
 
 
@@ -60,4 +62,15 @@ void converse(int sockfd) {
     fprintf(stdout, "Send RELEASE to server\n");
     strcpy(buffer, "RELEASE");
     send(sockfd, buffer, strlen(buffer), 0);
+}
+
+string create_message(int message_number) {
+    DWORD GetCurrentProcessId();
+    string msg = to_string(message_number);
+    msg.append("|");
+    msg.append("|");
+    while(msg.size() < 20) {
+        msg.append("0");
+    }
+    return msg;
 }
