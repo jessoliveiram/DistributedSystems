@@ -10,9 +10,10 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include "../utils/error.h"
+#include "../utils/message.h"
 
 #define PORT         8080
-#define BUFFER_SIZE  1024
+#define BUFFER_SIZE  20
 
 using namespace std;
 
@@ -29,6 +30,7 @@ void listen_udp()
     struct sockaddr_in serveraddr, clientaddr;
     struct hostent *hostp;
     char *hostaddrp;
+    std::string response;
 
     /* 
      * Creating socket file descriptor
@@ -92,9 +94,10 @@ void listen_udp()
 
         /* 
          * sendto: echo the input back to the client 
-         */
-        n = sendto(sockfd, buffer, strlen(buffer), 0, 
-                (struct sockaddr *) &clientaddr, clientlen);
+         */     
+        response = encode_message(MESSAGE_GRANT, BUFFER_SIZE);
+        cout <<"GRANT RESPONSE: " <<response << endl;
+        n = sendto(sockfd, response.c_str(), strlen(response.c_str()), 0, (struct sockaddr *) &clientaddr, clientlen);
         if (n < 0) 
             error((char*)"ERROR in sendto");
     }
