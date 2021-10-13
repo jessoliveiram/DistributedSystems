@@ -1,76 +1,85 @@
+#include <iostream>
+#include <fstream>
+#include <chrono>
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <string>
-using namespace std;
+#include "../utils/error.h"
+#include "../utils/message.h"
+
 
 #define PORT 8080
-#define LEN 10
+#define BUFFER_SIZE 20
 #define SERVER_ADDR "127.0.0.1"
 
-
-int main(int argc, char *argv[]) {}
+using namespace std;
 
 int connect() {
-    struct sockaddr_in server;
+    struct sockaddr_in serveraddr;
     int sockfd;
 
-    fprintf(stdout, "Starting client...\n");
-
+    cout << "Start the UDP Client..." << endl;
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-        perror("Error to create socket");
-        return EXIT_FAILURE;
+        error((char *) "socket creation failed");
     }
     fprintf(stdout, "Client with socket fd %d created\n", sockfd);
 
-    server.sin_family = AF_INET;
-    server.sin_port = htons(PORT);
+    serveraddr.sin_family = AF_INET;
+    serveraddr.sin_port = htons(PORT);
+    serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-    if (bind(sockfd, (struct sockaddr *) &server, sizeof(server)) < 0) {
-        perror("Error to connect");
-        return EXIT_FAILURE;
-    }
+    if (::bind(sockfd, (struct sockaddr *) &serveraddr, sizeof(serveraddr)) < 0)
+        error((char *) "ERROR on binding");
+
     return sockfd;
 }
 
-int disconnect(int sockfd) {
+void disconnect(int sockfd) {
     close(sockfd);
-    fprintf(stdout, "\nConnection closed\n");
-    return EXIT_SUCCESS;
+    fprintf(stdout, "Connection closed\n");
 }
 
-void converse(int sockfd) {
-    char buffer[LEN];
-    int slen;
-    int ok = true;
+void converse(int sockfd, int n_repeat) {
+    char buffer[BUFFER_SIZE];
+    std::string request;
+    std::string release;
 
-    while(ok) {
+    while (n_repeat >= 0) {
         fprintf(stdout, "Sending REQUEST to server...\n");
-        strcpy(buffer, "REQUEST");
-        send(sockfd, buffer, strlen(buffer), 0);
+        request = encode_message(MESSAGE_REQUEST, BUFFER_SIZE);
+        send(sockfd, request.c_str(), strlen(request.c_str()), 0);
 
-        slen = recv(sockfd, buffer, LEN, 0);
+        recv(sockfd, buffer, BUFFER_SIZE, 0);
         printf("Server: %s\n", buffer);
+        //decode message from buffer and compare after this
         if (strcmp(buffer, "GRANT") == 0) {
             printf("Write arquivo.txt\n");
-            ok = false;
+            // check error
+            n_repeat -= n_repeat;
+            fprintf(stdout, "Send RELEASE to server\n");
+            release = encode_message(MESSAGE_RELEASE, BUFFER_SIZE);
+            send(sockfd, release.c_str(), strlen(release.c_str()), 0);
         }
     }
-    fprintf(stdout, "Send RELEASE to server\n");
-    strcpy(buffer, "RELEASE");
-    send(sockfd, buffer, strlen(buffer), 0);
 }
 
-string create_message(int message_number) {
-    DWORD GetCurrentProcessId();
-    string msg = to_string(message_number);
-    msg.append("|");
-    msg.append("|");
-    while(msg.size() < 20) {
-        msg.append("0");
-    }
-    return msg;
+int write_file() {
+    ofstream myfile("result.txt");
+    myfile << "PID: " << std::to_string(getpid());
+    auto now = std::chrono::system_clock::now();
+    time_t time_now = std::chrono::system_clock::to_time_t(now);
+    myfile << "HORA: " << time_now << "\n";
+    myfile.close();
+    return 0;
+}
+
+int main(int argc, char *argv[]) {
+    int n_repeat = 5;
+    int sockfd = connect();
+    converse(sockfd, n_repeat);
+    disconnect(sockfd);
 }
