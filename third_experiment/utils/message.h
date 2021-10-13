@@ -8,6 +8,7 @@
 #define MESSAGE_GRANT "2"
 #define MESSAGE_RELEASE "3"
 #define SEPARATOR "|"
+#define MESSAGE_ERROR "4"
 
 struct message
 {
@@ -20,3 +21,5 @@ struct message
 std::string encode_message(const char*  message_type, int len_buffer);
 
 message decode_message(std::string msgstr);
+
+const char* get_message_type(std::string type);

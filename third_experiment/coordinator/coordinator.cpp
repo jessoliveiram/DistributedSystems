@@ -17,6 +17,33 @@
 
 using namespace std;
 
+/*
+ * Add a valid request to queue
+ */
+void queue_request(message msg, sockaddr_in clientaddr){
+    cout << "Queue Request: " << msg.pid << endl;
+    cout << "TYPE: " << msg.message_type << endl;
+}
+
+/*
+ * Send a GRANT message to next client in queue
+ */
+void release(message msg, sockaddr_in clientaddr){
+    cout << "Release: " << msg.pid << endl;
+}
+
+void process_message(message msg, struct sockaddr_in clientaddr)
+{
+    if (strcmp(msg.message_type, MESSAGE_REQUEST)==0)
+    {
+        queue_request(msg, clientaddr);
+    }
+    else if(strcmp(msg.message_type, MESSAGE_RELEASE) == 0)
+    {
+        release(msg, clientaddr);
+    }
+}
+
 /* 
 * UDP socket connection reference: 
 * https://www.cs.cmu.edu/afs/cs/academic/class/15213-f99/www/class26/udpserver.c 
@@ -93,15 +120,16 @@ void listen_udp()
                 error((char*)"ERROR on inet_ntoa\n");
             printf("server received datagram from %s (%s)\n", hostp->h_name, hostaddrp);
             printf("server received %d/%d bytes: %s\n", strlen(buffer), n, buffer);
-
+            process_message(msg, clientaddr);
+            
             /* 
             * sendto: echo the input back to the client 
             */     
-            response = encode_message(MESSAGE_GRANT, BUFFER_SIZE);
-            cout <<"GRANT RESPONSE: " <<response << endl;
-            n = sendto(sockfd, response.c_str(), strlen(response.c_str()), 0, (struct sockaddr *) &clientaddr, clientlen);
-            if (n < 0) 
-                error((char*)"ERROR in sendto");
+            // response = encode_message(MESSAGE_GRANT, BUFFER_SIZE);
+            // cout <<"GRANT RESPONSE: " <<response << endl;
+            // n = sendto(sockfd, response.c_str(), strlen(response.c_str()), 0, (struct sockaddr *) &clientaddr, clientlen);
+            // if (n < 0) 
+            //     error((char*)"ERROR in sendto");
         }
         else{
             cout << "invalid message" << endl;
