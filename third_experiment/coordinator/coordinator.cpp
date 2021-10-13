@@ -80,26 +80,32 @@ void listen_udp()
         if (n < 0)
             error((char*)"ERROR in recvfrom");
 
-        /* 
-         * gethostbyaddr: determine who sent the datagram
-         */
-        hostp = gethostbyaddr((const char *)&clientaddr.sin_addr.s_addr, sizeof(clientaddr.sin_addr.s_addr), AF_INET);
-        if (hostp == NULL)
-            error((char*)"ERROR on gethostbyaddr");
-        hostaddrp = inet_ntoa(clientaddr.sin_addr);
-        if (hostaddrp == NULL)
-            error((char*)"ERROR on inet_ntoa\n");
-        printf("server received datagram from %s (%s)\n", hostp->h_name, hostaddrp);
-        printf("server received %d/%d bytes: %s\n", strlen(buffer), n, buffer);
+        message msg = decode_message(buffer);
+        if(msg.valid){
+            /* 
+            * gethostbyaddr: determine who sent the datagram
+            */
+            hostp = gethostbyaddr((const char *)&clientaddr.sin_addr.s_addr, sizeof(clientaddr.sin_addr.s_addr), AF_INET);
+            if (hostp == NULL)
+                error((char*)"ERROR on gethostbyaddr");
+            hostaddrp = inet_ntoa(clientaddr.sin_addr);
+            if (hostaddrp == NULL)
+                error((char*)"ERROR on inet_ntoa\n");
+            printf("server received datagram from %s (%s)\n", hostp->h_name, hostaddrp);
+            printf("server received %d/%d bytes: %s\n", strlen(buffer), n, buffer);
 
-        /* 
-         * sendto: echo the input back to the client 
-         */     
-        response = encode_message(MESSAGE_GRANT, BUFFER_SIZE);
-        cout <<"GRANT RESPONSE: " <<response << endl;
-        n = sendto(sockfd, response.c_str(), strlen(response.c_str()), 0, (struct sockaddr *) &clientaddr, clientlen);
-        if (n < 0) 
-            error((char*)"ERROR in sendto");
+            /* 
+            * sendto: echo the input back to the client 
+            */     
+            response = encode_message(MESSAGE_GRANT, BUFFER_SIZE);
+            cout <<"GRANT RESPONSE: " <<response << endl;
+            n = sendto(sockfd, response.c_str(), strlen(response.c_str()), 0, (struct sockaddr *) &clientaddr, clientlen);
+            if (n < 0) 
+                error((char*)"ERROR in sendto");
+        }
+        else{
+            cout << "invalid message" << endl;
+        }
     }
 
 }

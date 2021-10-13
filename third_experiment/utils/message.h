@@ -9,6 +9,14 @@
 #define MESSAGE_RELEASE "3"
 #define SEPARATOR "|"
 
-std::string encode_message(const char*  message_number, int len_buffer);
+struct message
+{
+    const char * message_type;
+    std::string pid;
+    std::string rest;
+    bool valid;
+};
 
-char decode_message(char message);
+std::string encode_message(const char*  message_type, int len_buffer);
+
+message decode_message(std::string msgstr);
