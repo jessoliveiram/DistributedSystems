@@ -11,11 +11,14 @@
 #include <netinet/in.h>
 #include "../utils/error.h"
 #include "../utils/message.h"
+#include "../utils/safe_queue.h"
+#include "../utils/process_request.h"
 
 #define PORT         8080
 #define BUFFER_SIZE  20
 
 using namespace std;
+SafeQueue<ProcessRequest> request_queue;
 
 /*
  * Add a valid request to queue
@@ -23,6 +26,9 @@ using namespace std;
 void queue_request(message msg, sockaddr_in clientaddr){
     cout << "Queue Request: " << msg.pid << endl;
     cout << "TYPE: " << msg.message_type << endl;
+    ProcessRequest request = ProcessRequest(msg, clientaddr);
+    request_queue.enqueue(request);
+    
 }
 
 /*
@@ -30,6 +36,8 @@ void queue_request(message msg, sockaddr_in clientaddr){
  */
 void release(message msg, sockaddr_in clientaddr){
     cout << "Release: " << msg.pid << endl;
+    ProcessRequest request = request_queue.dequeue();
+    cout << "get from queue: " << request.get_msg().pid << endl;
 }
 
 void process_message(message msg, struct sockaddr_in clientaddr)

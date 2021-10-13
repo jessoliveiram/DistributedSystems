@@ -1,3 +1,5 @@
+#ifndef MESSAGE
+#define MESSAGE
 #include <stdio.h>
 #include <iostream>
 #include <string>
@@ -23,3 +25,4 @@ std::string encode_message(const char*  message_type, int len_buffer);
 message decode_message(std::string msgstr);
 
 const char* get_message_type(std::string type);
+#endif
