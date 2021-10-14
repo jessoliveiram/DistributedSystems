@@ -38,6 +38,14 @@ public:
         return val;
     }
 
+    //Return a copy of the queue
+    queue<T> copy_queue()
+    {
+        std::lock_guard<std::mutex> lock(m);
+        std::queue<T> copy_q = q;
+        return copy_q;    
+    }
+
 private:
     std::queue<T> q;
     mutable std::mutex m;
