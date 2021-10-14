@@ -5,18 +5,19 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <thread>
+#include <vector>
 #include "../utils/error.h"
 #include "../utils/message.h"
 
 
-#define processaddr_PORT 8080
-#define serveraddr_PORT 56820
+#define SERVERADDR_PORT 56820
 #define BUFFER_SIZE 20
 #define serveraddr_ADDR "127.0.0.1"
 
 using namespace std;
 
-int connect() {
+int connect(int process_port) {
     struct sockaddr_in processaddr;
     int sockfd;
 
@@ -27,7 +28,7 @@ int connect() {
     cout << "client with socketfd " << sockfd << " created\n" << endl;
 
     processaddr.sin_family = AF_INET;
-    processaddr.sin_port = htons(processaddr_PORT);
+    processaddr.sin_port = htons(process_port);
     processaddr.sin_addr.s_addr = htonl(INADDR_ANY);
 
     if (::bind(sockfd, (struct sockaddr *) &processaddr, sizeof(processaddr)) < 0)
@@ -59,7 +60,7 @@ void converse(int sockfd, int n_repeat) {
 
     struct sockaddr_in serveraddr;
     serveraddr.sin_family = AF_INET;
-    serveraddr.sin_port = htons(serveraddr_PORT);
+    serveraddr.sin_port = htons(SERVERADDR_PORT);
     serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
 
     while (n_repeat > 0)
@@ -108,9 +109,29 @@ void converse(int sockfd, int n_repeat) {
     }
 }
 
-int main(int argc, char *argv[]) {
-    int n_repeat = 5; //argv[1];
-    int sockfd = connect();
+void generate_process(int port, int n_repeat) {
+    int sockfd = connect(port);
     converse(sockfd, n_repeat);
     disconnect(sockfd);
+}
+
+void generate_case_study(int n_repeat, int first_port, int n_process) {
+    int port = first_port;
+    vector <thread> process;
+
+    for (unsigned int i = 0; i < n_process; i++) {
+        process.emplace_back(generate_process, port, n_repeat);
+        port += 1;
+    }
+
+    for (auto &p: process)
+        p.join();
+
+}
+
+int main(int argc, char *argv[]) {
+    int n_repeat = 5; //argv[1];
+    int first_port = 56824; //argv[2];
+    int n_process = 3; //argv[3];
+    generate_case_study(n_repeat, first_port, n_process);
 }
