@@ -1,3 +1,4 @@
+#include <mutex>
 #include <vector>
 #include <thread>
 #include <netdb.h>
@@ -11,6 +12,7 @@
 #include <netinet/in.h>
 #include "../utils/error.h"
 #include "../utils/message.h"
+#include <condition_variable>
 #include "../utils/safe_queue.h"
 #include "../utils/process_request.h"
 
@@ -19,6 +21,9 @@
 
 using namespace std;
 SafeQueue<ProcessRequest> request_queue;
+int sockfd;
+std::mutex m;
+std::condition_variable c;
 
 /*
  * Add a valid request to queue
@@ -32,14 +37,15 @@ void queue_request(message msg, sockaddr_in clientaddr){
 }
 
 /*
- * Send a GRANT message to next client in queue
+ * Move the first request in request_queue to process_queue
  */
-void release(message msg, sockaddr_in clientaddr){
-    cout << "Release: " << msg.pid << endl;
-    ProcessRequest request = request_queue.dequeue();
-    cout << "get from queue: " << request.get_msg().pid << endl;
+void release(){
+    c.notify_one();
 }
 
+/*
+ * Verify message_type and call the correspondent function to precess it.
+ */
 void process_message(message msg, struct sockaddr_in clientaddr)
 {
     if (strcmp(msg.message_type, MESSAGE_REQUEST)==0)
@@ -48,7 +54,7 @@ void process_message(message msg, struct sockaddr_in clientaddr)
     }
     else if(strcmp(msg.message_type, MESSAGE_RELEASE) == 0)
     {
-        release(msg, clientaddr);
+        release();
     }
 }
 
@@ -59,13 +65,13 @@ void process_message(message msg, struct sockaddr_in clientaddr)
 void listen_udp()
 {
     cout << "Start the UDP Server thread..." << endl;
-    int sockfd, optval, n;
+    int optval, n;
     socklen_t clientlen;
     char buffer[BUFFER_SIZE];
     struct sockaddr_in serveraddr, clientaddr;
     struct hostent *hostp;
     char *hostaddrp;
-    std::string response;
+    
 
     /* 
      * Creating socket file descriptor
@@ -151,9 +157,26 @@ void show_command_line_interface()
     cout << "Start the Command Line Interface thread..." << endl;
 }
 
+/*
+ * Send a GRANT to the first element of process_queue or wait if the queue is empty
+ * Wait RELEASE to consume the next element
+ */
 void do_mutal_exclusion()
 {
-    cout << "Start the Mutal Exclusion thread..." << endl;
+    int n;
+    while (1)
+    {   
+        ProcessRequest request = request_queue.dequeue();
+        struct sockaddr_in clientaddr = request.get_clientaddr();
+        std::string response = encode_message(MESSAGE_GRANT, BUFFER_SIZE);
+        n = sendto(sockfd, response.c_str(), strlen(response.c_str()), 0, (struct sockaddr *) &clientaddr, sizeof(clientaddr));
+        if (n < 0) 
+          error((char*)"ERROR in sendto");
+
+        std::unique_lock<std::mutex> lock(m);
+        c.wait(lock);
+    }
+    
 }
 
 int main()
