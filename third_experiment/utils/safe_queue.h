@@ -39,7 +39,7 @@ public:
     }
 
     //Return a copy of the queue
-    queue<T> copy_queue()
+    std::queue<T> copy_queue()
     {
         std::lock_guard<std::mutex> lock(m);
         std::queue<T> copy_q = q;

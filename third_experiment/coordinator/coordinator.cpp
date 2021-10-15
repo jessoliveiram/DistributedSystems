@@ -1,11 +1,15 @@
+#include <map>
 #include <mutex>
 #include <vector>
 #include <thread>
 #include <netdb.h>
 #include <iostream>
+#include <iterator>
+#include <signal.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 #include <arpa/inet.h>
 #include <sys/types.h> 
 #include <sys/socket.h>
@@ -20,6 +24,7 @@
 #define BUFFER_SIZE  20
 
 using namespace std;
+map<std::string, int> process_counter;
 SafeQueue<ProcessRequest> request_queue;
 int sockfd;
 std::mutex m;
@@ -28,18 +33,17 @@ std::condition_variable c;
 /*
  * Add a valid request to queue
  */
-void queue_request(message msg, sockaddr_in clientaddr){
-    cout << "Queue Request: " << msg.pid << endl;
-    cout << "TYPE: " << msg.message_type << endl;
+void queue_request(message msg, sockaddr_in clientaddr)
+{
     ProcessRequest request = ProcessRequest(msg, clientaddr);
-    request_queue.enqueue(request);
-    
+    request_queue.enqueue(request);    
 }
 
 /*
- * Move the first request in request_queue to process_queue
+ * Notify mutex thread to get next process
  */
-void release(){
+void release()
+{
     c.notify_one();
 }
 
@@ -64,7 +68,7 @@ void process_message(message msg, struct sockaddr_in clientaddr)
 */ 
 void listen_udp()
 {
-    cout << "Start the UDP Server thread..." << endl;
+    cout << "Start the UDP Server thread... \n" << endl;
     int optval, n;
     socklen_t clientlen;
     char buffer[BUFFER_SIZE];
@@ -126,24 +130,8 @@ void listen_udp()
             /* 
             * gethostbyaddr: determine who sent the datagram
             */
-            hostp = gethostbyaddr((const char *)&clientaddr.sin_addr.s_addr, sizeof(clientaddr.sin_addr.s_addr), AF_INET);
-            if (hostp == NULL)
-                error((char*)"ERROR on gethostbyaddr");
-            hostaddrp = inet_ntoa(clientaddr.sin_addr);
-            if (hostaddrp == NULL)
-                error((char*)"ERROR on inet_ntoa\n");
-            printf("server received datagram from %s (%s)\n", hostp->h_name, hostaddrp);
-            printf("server received %d/%d bytes: %s\n", strlen(buffer), n, buffer);
             process_message(msg, clientaddr);
             
-            /* 
-            * sendto: echo the input back to the client 
-            */     
-            // response = encode_message(MESSAGE_GRANT, BUFFER_SIZE);
-            // cout <<"GRANT RESPONSE: " <<response << endl;
-            // n = sendto(sockfd, response.c_str(), strlen(response.c_str()), 0, (struct sockaddr *) &clientaddr, clientlen);
-            // if (n < 0) 
-            //     error((char*)"ERROR in sendto");
         }
         else{
             cout << "invalid message" << endl;
@@ -152,9 +140,83 @@ void listen_udp()
 
 }
 
+enum command
+{
+    help,
+    cprint_queue,
+    print_process_history,
+    cexit,
+};
+
+command parse_command(std::string command)
+{
+    if((command == "queue") || (command == "1"))
+        return cprint_queue;
+    else if ((command == "history") || (command == "2"))
+        return print_process_history;
+    else if ((command == "exit") || (command == "3"))
+        return cexit;
+    else
+        return help;
+       
+}
+
+void print_queue()
+{
+    int count = 1;
+    std::queue<ProcessRequest> copied_queue = request_queue.copy_queue();
+    cout << "\nPROCESS IN QUEUE: \n";
+    cout << "#\tPID\n";
+
+    while (!copied_queue.empty())
+    {
+        ProcessRequest enqueued_request = copied_queue.front();
+        copied_queue.pop();
+        cout << count <<"\t" << enqueued_request.get_msg().pid << '\n';
+        count +=1;
+    }
+    cout << endl;
+}
+
+void print_process_counter()
+{
+    map<std::string, int>::iterator itr;
+    cout << "\nPROCESS EXECUTED: \n";
+    cout << "PID\t\tCount\n";
+    for (itr = process_counter.begin(); itr != process_counter.end(); ++itr) 
+    {
+        cout << itr->first << '\t'<<'\t' << " "<< itr->second << '\n';
+    }
+    cout << endl;
+}
+
 void show_command_line_interface()
 {
-    cout << "Start the Command Line Interface thread..." << endl;
+    cout << "Start the Command Line Interface thread...\n" << endl;
+    std::string command;
+    while (1)
+    {
+        getline(cin, command);
+        switch (parse_command(command))
+        {
+        case help:
+            cout << "---- HELP -----" << endl;
+            cout << "'1' or 'queue': print all requests in queue" << endl;
+            cout << "'2' or 'history': print how many times each process has been allowed" << endl;
+            cout << "'3' or 'exit': quit the program" << endl;
+            
+            break;
+        case cprint_queue:
+            print_queue();
+            break;
+        case print_process_history:
+            print_process_counter();
+            break;
+        case cexit:
+            kill(getpid(), 9);      
+        }
+    }
+    
 }
 
 /*
@@ -164,6 +226,7 @@ void show_command_line_interface()
 void do_mutal_exclusion()
 {
     int n;
+    cout << "Start the MUTEX thread... \n" << endl;
     while (1)
     {   
         ProcessRequest request = request_queue.dequeue();
@@ -173,6 +236,16 @@ void do_mutal_exclusion()
         if (n < 0) 
           error((char*)"ERROR in sendto");
 
+        map<std::string, int>::iterator itmap = process_counter.find(request.get_msg().pid);
+
+        if (itmap == process_counter.end())
+        {
+            process_counter.insert(pair<std::string, int>(request.get_msg().pid, 1));
+        }else{
+
+            itmap->second +=1; 
+        }
+        
         std::unique_lock<std::mutex> lock(m);
         c.wait(lock);
     }
@@ -183,8 +256,8 @@ int main()
 {
     vector<thread> program;
     program.emplace_back(listen_udp);
-    program.emplace_back(show_command_line_interface);
     program.emplace_back(do_mutal_exclusion);
+    program.emplace_back(show_command_line_interface);
 
     for (auto& program_thread : program)
       program_thread.join();
