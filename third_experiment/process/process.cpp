@@ -125,9 +125,9 @@ void converse(int sockfd, int n_repeat, int sleep_seconds) {
 }
 
 int main(int argc, char *argv[]) {
-    int n_repeat = argv[1];
-    int port = argv[2];
-    int sleep_seconds = argv[3];
+    int n_repeat = atoi(argv[1]);
+    int port = atoi(argv[2]);
+    int sleep_seconds = atoi(argv[3]);
     int sockfd = connect(port);
     converse(sockfd, n_repeat, sleep_seconds);
     disconnect(sockfd);
