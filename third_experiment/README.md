@@ -1,11 +1,23 @@
-# How to build and run:
+# Requirements:
+- Linux or OS X
+- C++11
+- Python3
+- GNU Make
 
-## Coordinator
+# How to build and run
+
+## Coordinator:
 ```bash
 $ make run-coordinator
 ```
 
-## Process
+## Process:
 ```bash
 $ make run-process
+```
+
+# Verify files
+## Logs:
+```bash
+$ make verify-logs
 ```

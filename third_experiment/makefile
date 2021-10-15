@@ -10,4 +10,7 @@ run-coordinator: build-coordinator
 	./coordinator.out
 
 run-process: build-process
-	python process/run_study_cases.py
+	python3 process/run_study_cases.py
+
+verify-logs:
+	python3 coordinator/verify_log.py
