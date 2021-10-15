@@ -17,6 +17,7 @@
 
 using namespace std;
 
+// create a socket and return the socketfd number
 int connect(int process_port) {
     struct sockaddr_in processaddr;
     int sockfd;
@@ -27,6 +28,7 @@ int connect(int process_port) {
     
     cout << "client with socketfd " << sockfd << " created\n" << endl;
 
+    // config connection
     processaddr.sin_family = AF_INET;
     processaddr.sin_port = htons(process_port);
     processaddr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -37,12 +39,15 @@ int connect(int process_port) {
     return sockfd;
 }
 
+// close socket connection
 void disconnect(int sockfd) {
     close(sockfd);
     cout << "connection closed\n" << endl;
 }
 
-int write_file() {
+// write PID and Time to result.txt file
+// after that, sleep for n seconds
+int write_file(int sleep_seconds) {
     std::ofstream myfile;
     myfile.open("result.txt", std::ios_base::app);
     myfile << "PID: " << std::to_string(getpid()) << " ";
@@ -50,35 +55,45 @@ int write_file() {
     time_t time_now = std::chrono::system_clock::to_time_t(now);
     myfile << "HORA: " << time_now << "\n";
     myfile.close();
+    sleep(sleep_seconds);
     return 0;
 }
 
-void converse(int sockfd, int n_repeat) {
+// create a connection with coordinator to send and receive messages
+void converse(int sockfd, int n_repeat, int sleep_seconds) {
+    // create a buffer to read from coordinator
     char buffer[BUFFER_SIZE];
     std::string request, release;
     int n;
 
+    // create and config connection with coordinator (server)
     struct sockaddr_in serveraddr;
     serveraddr.sin_family = AF_INET;
     serveraddr.sin_port = htons(SERVERADDR_PORT);
     serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
 
+    // repeat n requests for the same process
     while (n_repeat > 0)
     {
-        cout << "sending REQUEST to serveraddr...\n" << endl;
+        cout << "sending REQUEST to coordinator...\n" << endl;
 
+        // send request to coordinator
+        // wait until coordinator send a response
         request = encode_message(MESSAGE_REQUEST, BUFFER_SIZE);
         n = sendto(sockfd, request.c_str(), strlen(request.c_str()), 0,
                    (struct sockaddr *) &serveraddr, sizeof(serveraddr));
         if (n < 0)
             error((char*)"ERROR in sendto");
 
+        // receive the response
         n = recv(sockfd, buffer, BUFFER_SIZE, 0);
         if (n < 0)
             error((char*)"ERROR in recv");
 
-        cout << "serveraddr response: %s\n" << buffer << endl;
+        cout << "coordinator response: " << buffer << "\n" << endl;
 
+        // verify response from coordinator
+        // if invalid, send another request
         message msg = decode_message(buffer);
         if(msg.valid) {
             cout << msg.message_type << endl;
@@ -86,12 +101,12 @@ void converse(int sockfd, int n_repeat) {
 
                 cout << "writing in result.txt\n" << endl;
 
-                write_file();
+                write_file(sleep_seconds);
                 if (n < 0)
                     error((char*)"ERROR writing file");
                 n_repeat -= 1;
 
-                cout << "send RELEASE to serveraddr\n" << endl;
+                cout << "send RELEASE to coordinator\n" << endl;
 
                 release = encode_message(MESSAGE_RELEASE, BUFFER_SIZE);
                 n = sendto(sockfd, release.c_str(), strlen(release.c_str()), 0,
@@ -109,29 +124,11 @@ void converse(int sockfd, int n_repeat) {
     }
 }
 
-void generate_process(int port, int n_repeat) {
-    int sockfd = connect(port);
-    converse(sockfd, n_repeat);
-    disconnect(sockfd);
-}
-
-void generate_case_study(int n_repeat, int first_port, int n_process) {
-    int port = first_port;
-    vector <thread> process;
-
-    for (unsigned int i = 0; i < n_process; i++) {
-        process.emplace_back(generate_process, port, n_repeat);
-        port += 1;
-    }
-
-    for (auto &p: process)
-        p.join();
-
-}
-
 int main(int argc, char *argv[]) {
-    int n_repeat = 5; //argv[1];
-    int first_port = 56824; //argv[2];
-    int n_process = 3; //argv[3];
-    generate_case_study(n_repeat, first_port, n_process);
+    int n_repeat = argv[1];
+    int port = argv[2];
+    int sleep_seconds = argv[3];
+    int sockfd = connect(port);
+    converse(sockfd, n_repeat, sleep_seconds);
+    disconnect(sockfd);
 }
