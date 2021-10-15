@@ -1,9 +1,11 @@
 import os
 from multiprocessing import Process
 
+from third_experiment.process.evaluator import verify_result
+
 
 def run_process(REPEAT, PORT, SLEEP):
-    os.system(f"./process.out {REPEAT} {PORT} {SLEEP}")
+    os.system(f"./a.out {REPEAT} {PORT} {SLEEP}")
 
 
 def run_n_process(N, REPEAT, SLEEP):
@@ -15,25 +17,29 @@ def run_n_process(N, REPEAT, SLEEP):
 
 def study_case_basic():
     run_n_process(2, 10, 2)
+    verify_result(2, 10)
 
 
 def study_case_test_1():
     for i in [2, 4, 8, 16, 32]:
         run_n_process(i, 10, 2)
+        verify_result(i, 10)
 
 
 def study_case_test_2():
     for i in [2, 4, 8, 16, 32, 64]:
         run_n_process(i, 5, 1)
+        verify_result(i, 5)
 
 
 def study_case_test_3():
     for i in [2, 4, 8, 16, 32, 64, 128]:
         run_n_process(i, 3, 0)
+        verify_result(i, 3)
 
 
 if __name__ == '__main__':
     study_case_basic()
-    # study_case_test_1()
-    # study_case_test_2()
-    # study_case_test_3()
+    study_case_test_1()
+    study_case_test_2()
+    study_case_test_3()
