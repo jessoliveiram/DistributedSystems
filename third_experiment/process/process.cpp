@@ -5,8 +5,6 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <thread>
-#include <vector>
 #include "../utils/error.h"
 #include "../utils/message.h"
 
@@ -49,7 +47,8 @@ void disconnect(int sockfd) {
 int write_file(int sleep_seconds) {
     std::ofstream myfile;
     myfile.open("result.txt", std::ios_base::app);
-    myfile << "PID: " << std::to_string(getpid()) << " ";
+    myfile << "PID: " << std::to_string(getpid());
+    myfile << " | ";
     auto now = std::chrono::system_clock::now();
     time_t time_now = std::chrono::system_clock::to_time_t(now);
     myfile << "HORA: " << time_now << "\n";
