@@ -3,7 +3,7 @@ from multiprocessing import Process
 
 
 def run_process(REPEAT, PORT, SLEEP):
-    os.system(f"./a.out {REPEAT} {PORT} {SLEEP}")
+    os.system(f"./process.out {REPEAT} {PORT} {SLEEP}")
 
 
 def run_n_process(N, REPEAT, SLEEP):

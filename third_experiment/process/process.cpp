@@ -11,9 +11,8 @@
 #include "../utils/message.h"
 
 
-#define SERVERADDR_PORT 56820
+#define SERVERADDR_PORT 8080
 #define BUFFER_SIZE 20
-#define serveraddr_ADDR "127.0.0.1"
 
 using namespace std;
 
