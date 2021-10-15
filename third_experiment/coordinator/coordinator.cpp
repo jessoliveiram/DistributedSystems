@@ -3,6 +3,7 @@
 #include <vector>
 #include <thread>
 #include <netdb.h>
+#include <fstream>
 #include <iostream>
 #include <iterator>
 #include <signal.h>
@@ -26,6 +27,7 @@
 using namespace std;
 map<std::string, int> process_counter;
 SafeQueue<ProcessRequest> request_queue;
+SafeQueue<std::string> log_queue;
 int sockfd;
 std::mutex m;
 std::condition_variable c;
@@ -37,6 +39,33 @@ void queue_request(message msg, sockaddr_in clientaddr)
 {
     ProcessRequest request = ProcessRequest(msg, clientaddr);
     request_queue.enqueue(request);    
+}
+
+std::string format_log_text(std::string timestamp, std::string message_type, std::string pid)
+{
+    std::string log_text = timestamp;
+    log_text += SEPARATOR;
+    log_text += message_type;
+    log_text += SEPARATOR;
+    log_text += pid;
+    return log_text;
+}
+
+/*
+ * Read logs from the queue and write in log file
+ */
+void write_logs() 
+{
+    std::ofstream log_file;
+    while (1)
+    {         
+        std::string log_msg = log_queue.dequeue();
+        //cout << log_msg << endl;
+        log_file.open("log.txt", std::ios_base::app);
+        log_file << log_msg << "\n";
+        log_file.close();
+    }
+    
 }
 
 /*
@@ -52,12 +81,17 @@ void release()
  */
 void process_message(message msg, struct sockaddr_in clientaddr)
 {
+    auto now = std::chrono::system_clock::now();
+    time_t time_now = std::chrono::system_clock::to_time_t(now);
+        
     if (strcmp(msg.message_type, MESSAGE_REQUEST)==0)
     {
+        log_queue.enqueue(format_log_text(to_string(time_now),"REQUEST", msg.pid));
         queue_request(msg, clientaddr);
     }
     else if(strcmp(msg.message_type, MESSAGE_RELEASE) == 0)
     {
+        log_queue.enqueue(format_log_text(to_string(time_now),"RELEASE", msg.pid));
         release();
     }
 }
@@ -120,8 +154,7 @@ void listen_udp()
          * recvfrom: receive a UDP datagram from a client
          */
         bzero(buffer, BUFFER_SIZE);
-        n = recvfrom(sockfd, buffer, BUFFER_SIZE, 0,
-                (struct sockaddr *) &clientaddr, &clientlen);
+        n = recvfrom(sockfd, buffer, BUFFER_SIZE, 0, (struct sockaddr *) &clientaddr, &clientlen);
         if (n < 0)
             error((char*)"ERROR in recvfrom");
 
@@ -233,6 +266,9 @@ void do_mutal_exclusion()
         struct sockaddr_in clientaddr = request.get_clientaddr();
         std::string response = encode_message(MESSAGE_GRANT, BUFFER_SIZE);
         n = sendto(sockfd, response.c_str(), strlen(response.c_str()), 0, (struct sockaddr *) &clientaddr, sizeof(clientaddr));
+        auto now = std::chrono::system_clock::now();
+        time_t time_now = std::chrono::system_clock::to_time_t(now);
+        log_queue.enqueue(format_log_text(to_string(time_now),"GRANT", request.get_msg().pid));
         if (n < 0) 
           error((char*)"ERROR in sendto");
 
@@ -258,6 +294,7 @@ int main()
     program.emplace_back(listen_udp);
     program.emplace_back(do_mutal_exclusion);
     program.emplace_back(show_command_line_interface);
+    program.emplace_back(write_logs);
 
     for (auto& program_thread : program)
       program_thread.join();
