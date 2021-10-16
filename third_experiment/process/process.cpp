@@ -1,3 +1,4 @@
+#include <chrono>
 #include <iostream>
 #include <fstream>
 #include <stdio.h>
@@ -19,11 +20,11 @@ int connect(int process_port) {
     struct sockaddr_in processaddr;
     int sockfd;
 
-    cout << "Start the UDP Client..." << endl;
+    //cout << "Start the UDP Client..." << endl;
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) 
         error((char *) "ERROR socket creation failed");
     
-    cout << "client with socketfd " << sockfd << " created\n" << endl;
+    //cout << "client with socketfd " << sockfd << " created\n" << endl;
 
     // config connection
     processaddr.sin_family = AF_INET;
@@ -39,7 +40,7 @@ int connect(int process_port) {
 // close socket connection
 void disconnect(int sockfd) {
     close(sockfd);
-    cout << "connection closed\n" << endl;
+    //cout << "connection closed\n" << endl;
 }
 
 // write PID and Time to result.txt file
@@ -72,7 +73,7 @@ void converse(int sockfd, int n_repeat, int sleep_seconds) {
     // repeat n requests for the same process
     while (n_repeat > 0)
     {
-        cout << "sending REQUEST to coordinator...\n" << endl;
+        //cout << "sending REQUEST to coordinator...\n" << endl;
 
         // send request to coordinator
         // wait until coordinator send a response
@@ -87,23 +88,23 @@ void converse(int sockfd, int n_repeat, int sleep_seconds) {
         if (n < 0)
             error((char*)"ERROR in recv");
 
-        cout << "coordinator response: " << buffer << "\n" << endl;
+        //cout << "coordinator response: " << buffer << "\n" << endl;
 
         // verify response from coordinator
         // if invalid, send another request
         message msg = decode_message(buffer);
         if(msg.valid) {
-            cout << msg.message_type << endl;
+            //cout << msg.message_type << endl;
             if (strcmp(msg.message_type, MESSAGE_GRANT) == 0) {
 
-                cout << "writing in result.txt\n" << endl;
+                //cout << "writing in result.txt\n" << endl;
 
                 write_file(sleep_seconds);
                 if (n < 0)
                     error((char*)"ERROR writing file");
                 n_repeat -= 1;
 
-                cout << "send RELEASE to coordinator\n" << endl;
+                //cout << "send RELEASE to coordinator\n" << endl;
 
                 release = encode_message(MESSAGE_RELEASE, BUFFER_SIZE);
                 n = sendto(sockfd, release.c_str(), strlen(release.c_str()), 0,

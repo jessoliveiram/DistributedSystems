@@ -11,9 +11,14 @@
 $ make run-coordinator
 ```
 
-## Process:
+## Process (all case studies):
 ```bash
 $ make run-process
+```
+
+## Case N=0,1,2,3
+```bash
+$ make run-caseN
 ```
 
 # Verify files
