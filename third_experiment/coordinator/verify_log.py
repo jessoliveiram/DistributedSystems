@@ -1,4 +1,4 @@
-LOG_PATH = "log.txt"
+LOG_PATH = "../log.txt"
 LOG_SEPARATOR= "|"
 
 log_list = []
