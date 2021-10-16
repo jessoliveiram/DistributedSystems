@@ -1,5 +1,6 @@
 import os
 from multiprocessing import Process
+from timeit import default_timer as timer
 
 from third_experiment.process.evaluator import verify_result
 
@@ -11,7 +12,10 @@ def run_process(REPEAT, PORT, SLEEP):
 def run_n_process(N, REPEAT, SLEEP):
     PORT = 56823
     for i in range(N):
+        start = timer()
         Process(target=run_process, args=(REPEAT, PORT, SLEEP)).start()
+        stop = timer()
+        print("N = " + str(i) + " Time: " + str(stop - start))
         PORT += 1
 
 

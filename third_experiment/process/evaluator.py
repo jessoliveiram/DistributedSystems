@@ -10,6 +10,7 @@ def evaluator(n, repeat):
         line_split = line.split("|")
         time_new = line_split[1].split(":")[1]
         if not verify_time(time_old, time_new):
+            print("Error")
             return False
         time_old = time_new
         pid = line_split[0].split(":")[1]
@@ -18,8 +19,10 @@ def evaluator(n, repeat):
         else:
             count_process[pid] = count_process[pid] + 1
     if not verify_lines(n, repeat, count):
+        print("Error")
         return False
     if not verify_pid(count_process, repeat):
+        print("Error")
         return False
     return True
 
